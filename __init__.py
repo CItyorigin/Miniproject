@@ -4,19 +4,19 @@ from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash
 from config import Config
 
-# SQLAlchemy 및 Flask-Migrate 초기화
 db = SQLAlchemy()
 migrate = Migrate()
 
 def create_app():
+    print("🚀 시스템을 시작합니다.")
+    print("어플을 만드는 중입니다.")
+    
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    # 데이터베이스 초기화
     db.init_app(app)
     migrate.init_app(app, db)
 
-    # 모델 import (여기서 해야 순환 import 방지됨)
     from .models import User, Store, Employee
 
     @app.route('/')
@@ -131,4 +131,5 @@ def create_app():
         except Exception as e:
             return jsonify({"error": str(e)}), 500
 
+    print("✅ 어플리케이션 생성이 완료되었습니다.")
     return app
