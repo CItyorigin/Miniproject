@@ -37,7 +37,7 @@ def register_employee(user_id, store_id, emp_type, code=None):
     if not user or not store:
         raise ValueError("유효하지 않은 User ID 또는 Store ID입니다.")
 
-def employee = Employee(
+    employee = Employee(
         user_id=user_id,
         store_id=store_id,
         type=emp_type,
