@@ -1,51 +1,65 @@
 from flask import Blueprint, request, jsonify
-from app.services import create_user, create_store, register_employee
+from app.models import db, User, Store, Employee
 
-main = Blueprint('main', __name__)
+bp = Blueprint('api', __name__, url_prefix='/api')
 
-@main.route('/users', methods=['POST'])
-def signup():
+
+# 1. 회원가입
+@bp.route('/users', methods=['POST'])
+def create_user():
     data = request.get_json()
-    try:
-        user = create_user(
-            first_name=data.get('first_name'),
-            last_name=data.get('last_name'),
-            email=data['email'],
-            password=data['password'],
-            address=data.get('address'),
-            contact=data.get('contact'),
-            gender=data.get('gender')
-        )
-        return jsonify({'id': user.id, 'email': user.email}), 201
-    except ValueError as e:
-        return jsonify({'error': str(e)}), 400
+    username = data.get('username')
+    email = data.get('email')
+    password = data.get('password')
 
-@main.route('/stores', methods=['POST'])
-def add_store():
-    data = request.get_json()
-    store = create_store(
-        name=data['name'],
-        address=data.get('address'),
-        contact=data.get('contact')
-    )
-    return jsonify({'id': store.id, 'name': store.name}), 201
+    if not username or not email or not password:
+        return jsonify({'error': 'Missing required fields'}), 400
 
-@main.route('/employees', methods=['POST'])
-def add_employee():
+    if User.query.filter((User.username == username) | (User.email == email)).first():
+        return jsonify({'error': 'User already exists'}), 409
+
+    user = User(username=username, email=email)
+    user.set_password(password)
+
+    db.session.add(user)
+    db.session.commit()
+
+    return jsonify({'message': 'User created', 'user_id': user.id}), 201
+
+
+# 2. 가게 등록
+@bp.route('/stores', methods=['POST'])
+def create_store():
     data = request.get_json()
-    try:
-        employee = register_employee(
-            user_id=data['user_id'],
-            store_id=data['store_id'],
-            emp_type=data['type'],
-            code=data.get('code')
-        )
-        return jsonify({
-            'id': employee.id,
-            'user_id': employee.user_id,
-            'store_id': employee.store_id,
-            'type': employee.type,
-            'code': employee.code
-        }), 201
-    except ValueError as e:
-        return jsonify({'error': str(e)}), 400
+    name = data.get('name')
+    location = data.get('location')
+    user_id = data.get('user_id')
+
+    if not name or not user_id:
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    store = Store(name=name, location=location, user_id=user_id)
+
+    db.session.add(store)
+    db.session.commit()
+
+    return jsonify({'message': 'Store created', 'store_id': store.id}), 201
+
+
+# 3. 직원 등록
+@bp.route('/employees', methods=['POST'])
+def create_employee():
+    data = request.get_json()
+    name = data.get('name')
+    role = data.get('role')
+    store_id = data.get('store_id')
+
+    if not name or not store_id:
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    employee = Employee(name=name, role=role, store_id=store_id)
+
+    db.session.add(employee)
+    db.session.commit()
+
+    return jsonify({'message': 'Employee created', 'employee_id': employee.id}), 201
